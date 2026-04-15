@@ -298,22 +298,59 @@ def extract_video_id(url: str) -> Optional[str]:
     return None
 
 
-def fetch_transcript(video_id: str) -> list[dict]:
-    """Fetch the best available transcript (English preferred)."""
-    api = YouTubeTranscriptApi()
-    transcript_list = api.list_transcripts(video_id)
+def fetch_transcript(video_id: str) -> list:
+    """
+    Robust fetcher — tries multiple methods to work across all
+    versions of youtube-transcript-api.
+    """
+    # Method 1: get_transcript() class method — most stable across all versions
+    try:
+        return YouTubeTranscriptApi.get_transcript(
+            video_id, languages=["en", "en-US", "en-GB"]
+        )
+    except Exception:
+        pass
 
-    # Try manually created English first, then auto-generated, then any
-    for attempt in [
-        lambda tl: tl.find_manually_created_transcript(["en", "en-US", "en-GB"]),
-        lambda tl: tl.find_generated_transcript(["en", "en-US", "en-GB"]),
-        lambda tl: next(iter(tl)),  # fallback: first available language
-    ]:
-        try:
-            transcript = attempt(transcript_list)
-            return transcript.fetch()
-        except Exception:
-            continue
+    # Method 2: get_transcript() with no language filter (catches auto-generated)
+    try:
+        return YouTubeTranscriptApi.get_transcript(video_id)
+    except Exception:
+        pass
+
+    # Method 3: instance list() — new API style (0.6.x+)
+    try:
+        api = YouTubeTranscriptApi()
+        list_fn = getattr(api, "list", None) or getattr(api, "list_transcripts", None)
+        if list_fn:
+            tl = list_fn(video_id)
+            for attempt in [
+                lambda t: t.find_manually_created_transcript(["en", "en-US", "en-GB"]),
+                lambda t: t.find_generated_transcript(["en", "en-US", "en-GB"]),
+                lambda t: next(iter(t)),
+            ]:
+                try:
+                    result = attempt(tl)
+                    fetch_fn = getattr(result, "fetch", None)
+                    return fetch_fn() if fetch_fn else list(result)
+                except Exception:
+                    continue
+    except Exception:
+        pass
+
+    # Method 4: static list_transcripts — older API style
+    try:
+        tl = YouTubeTranscriptApi.list_transcripts(video_id)
+        for attempt in [
+            lambda t: t.find_manually_created_transcript(["en", "en-US", "en-GB"]),
+            lambda t: t.find_generated_transcript(["en", "en-US", "en-GB"]),
+            lambda t: next(iter(t)),
+        ]:
+            try:
+                return attempt(tl).fetch()
+            except Exception:
+                continue
+    except Exception:
+        pass
 
     raise NoTranscriptFound(video_id, ["en"], {})
 
