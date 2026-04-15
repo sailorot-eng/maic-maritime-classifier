@@ -790,6 +790,7 @@ chunk_size = st.select_slider(
 st.markdown("</div>", unsafe_allow_html=True)
 
 # Optional researcher notes
+custom_notes = ""
 with st.expander("📝 Optional: Add Your Research Notes / Context", expanded=False):
     custom_notes = st.text_area(
         "Researcher notes",
@@ -801,8 +802,6 @@ with st.expander("📝 Optional: Add Your Research Notes / Context", expanded=Fa
         height=120,
         label_visibility="collapsed",
     )
-else:
-    custom_notes = ""
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN ACTION
