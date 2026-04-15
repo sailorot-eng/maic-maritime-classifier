@@ -300,7 +300,8 @@ def extract_video_id(url: str) -> Optional[str]:
 
 def fetch_transcript(video_id: str) -> list[dict]:
     """Fetch the best available transcript (English preferred)."""
-    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+    api = YouTubeTranscriptApi()
+    transcript_list = api.list_transcripts(video_id)
 
     # Try manually created English first, then auto-generated, then any
     for attempt in [
