@@ -9,6 +9,7 @@ Author: Built for PhD Candidate | Occupational Science | UFT AI Development Cour
 
 import streamlit as st
 import re
+from typing import Optional
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import (
     TranscriptsDisabled,
@@ -279,7 +280,7 @@ st.markdown(
 # UTILITY FUNCTIONS
 # ─────────────────────────────────────────────────────────────────────────────
 
-def extract_video_id(url: str) -> str | None:
+def extract_video_id(url: str) -> Optional[str]:
     """
     Parse a YouTube video ID from any common URL format:
       - https://www.youtube.com/watch?v=ID
